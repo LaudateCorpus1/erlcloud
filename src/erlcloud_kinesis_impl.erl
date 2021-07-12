@@ -34,11 +34,10 @@
 
 -module(erlcloud_kinesis_impl).
 
--include("erlcloud.hrl").
 -include("erlcloud_aws.hrl").
 
 %% Helpers
--export([backoff/1, retry/2]).
+-export([retry/2]).
 
 %% Internal impl api
 -export([request/3, request/4]).
@@ -82,19 +81,13 @@ request(Config0, Operation, Json, ShouldDecode) ->
 
 -define(NUM_ATTEMPTS, 10).
 
-%% Sleep after an attempt
--spec backoff(pos_integer()) -> ok.
-backoff(1) -> ok;
-backoff(Attempt) ->
-    timer:sleep(erlcloud_util:rand_uniform((1 bsl (Attempt - 1)) * 100)).
-
 -type attempt() :: {attempt, pos_integer()} | {error, term()}.
 -type retry_fun() :: fun((pos_integer(), term()) -> attempt()).
 -spec retry(pos_integer(), term()) -> attempt().
 retry(Attempt, Reason) when Attempt >= ?NUM_ATTEMPTS ->
     {error, Reason};
 retry(Attempt, _) ->
-    backoff(Attempt),
+    erlcloud_util:backoff(Attempt),
     {attempt, Attempt + 1}.
 
 -type headers() :: [{string(), string()}].

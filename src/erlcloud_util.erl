@@ -1,11 +1,17 @@
 -module(erlcloud_util).
--export([sha_mac/2, sha256_mac/2, md5/1, sha256/1, rand_uniform/1,
+-export([backoff/1, sha_mac/2, sha256_mac/2, md5/1, sha256/1,
     is_dns_compliant_name/1,
     query_all/4, query_all/5, query_all_token/4, make_response/2,
     get_items/2, to_string/1, encode_list/2, next_token/2,
     filter_undef/1]).
 
 -define(MAX_ITEMS, 1000).
+
+%% @doc Sleep after an attempt
+-spec backoff(pos_integer()) -> ok.
+backoff(1) -> ok;
+backoff(Attempt) ->
+    timer:sleep(rand:uniform((1 bsl (Attempt - 1)) * 100)).
 
 sha_mac(K, S) ->
     crypto:mac(hmac, sha, K, S).
@@ -19,14 +25,6 @@ sha256(V) ->
 
 md5(V) ->
     crypto:hash(md5, V).
-
--ifndef(ERLANG_OTP_VERSION_19).
-rand_uniform(N) ->
-    random:uniform(N).
--else.
-rand_uniform(N) ->
-    rand:uniform(N).
--endif.
 
 -spec is_dns_compliant_name(string()) -> boolean().
 is_dns_compliant_name(Name) ->
