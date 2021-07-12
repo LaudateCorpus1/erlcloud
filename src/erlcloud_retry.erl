@@ -14,12 +14,10 @@
 
 -module(erlcloud_retry).
 
--include("erlcloud.hrl").
 -include("erlcloud_aws.hrl").
 
 %% Helpers
--export([backoff/1,
-         no_retry/1,
+-export([no_retry/1,
          default_retry/1,
 
          only_http_errors/1,
@@ -39,17 +37,11 @@
 no_retry(Request) ->
     {error, Request}.
 
-%% Sleep after an attempt
--spec backoff(pos_integer()) -> ok.
-backoff(1) -> ok;
-backoff(Attempt) ->
-    timer:sleep(erlcloud_util:rand_uniform((1 bsl (Attempt - 1)) * 100)).
-
 -spec default_retry(#aws_request{}) -> should_retry().
 default_retry(#aws_request{should_retry = false} = Request) ->
     {error, Request};
 default_retry(#aws_request{attempt = Attempt} = Request) ->
-    backoff(Attempt),
+    erlcloud_util:backoff(Attempt),
     {retry, Request}.
 
 request(Config, #aws_request{attempt = 0} = Request, ResultFun) ->
